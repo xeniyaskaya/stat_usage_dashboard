@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Classic Pages — Migration Priority Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #222636;
+      --border: #2e3347;
+      --accent: #6c63ff;
+      --accent2: #00d4aa;
+      --accent3: #ff6b6b;
+      --accent4: #ffd166;
+      --text: #e8eaf0;
+      --muted: #8b90a7;
+      --radius: 14px;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 32px 24px 60px;
+    }
+
+    header {
+      max-width: 1200px;
+      margin: 0 auto 36px;
+    }
+
+    header h1 {
+      font-size: 1.9rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #a78bfa, #6c63ff, #00d4aa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 6px;
+    }
+
+    header p {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .grid {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      gap: 24px;
+    }
+
+    .row-3 { grid-template-columns: repeat(3, 1fr); }
+    .row-2 { grid-template-columns: 1fr 1fr; }
+    .row-1 { grid-template-columns: 1fr; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+      transition: box-shadow 0.2s;
+    }
+
+    .card:hover { box-shadow: 0 8px 32px rgba(108,99,255,0.12); }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: var(--radius) var(--radius) 0 0;
+    }
+
+    .card.red::before  { background: linear-gradient(90deg, var(--accent3), #ff9a3c); }
+    .card.teal::before { background: linear-gradient(90deg, var(--accent2), #00b4d8); }
+    .card.gold::before { background: linear-gradient(90deg, var(--accent4), #f4a261); }
+
+    .card-title {
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .kpi-value {
+      font-size: 2.4rem;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--text);
+    }
+
+    .kpi-sub {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .section-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-bottom: 18px;
+      color: var(--text);
+    }
+
+    .section-title span {
+      font-size: 0.78rem;
+      font-weight: 400;
+      color: var(--muted);
+      margin-left: 8px;
+    }
+
+    canvas { width: 100% !important; }
+
+    /* Quadrant legend */
+    .quad-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .quad-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .quad-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* Table */
+    .tbl-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.84rem;
+    }
+
+    thead th {
+      text-align: left;
+      padding: 8px 12px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--surface2); }
+
+    tbody td {
+      padding: 9px 12px;
+      color: var(--text);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+
+    .badge-critical { background: rgba(255,107,107,0.18); color: #ff6b6b; }
+    .badge-high     { background: rgba(108,99,255,0.18); color: #a78bfa; }
+    .badge-medium   { background: rgba(0,212,170,0.18); color: #00d4aa; }
+    .badge-low      { background: rgba(139,144,167,0.15); color: #8b90a7; }
+
+    .bar-bg {
+      background: var(--border);
+      border-radius: 4px;
+      height: 6px;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+    }
+
+    .insight-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 8px;
+      padding: 14px 16px;
+      font-size: 0.84rem;
+      line-height: 1.6;
+      color: var(--muted);
+    }
+
+    .insight-box strong { color: var(--text); }
+
+    .insights-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .insight-box.teal { border-left-color: var(--accent2); }
+    .insight-box.red  { border-left-color: var(--accent3); }
+    .insight-box.gold { border-left-color: var(--accent4); }
+
+    @media (max-width: 900px) {
+      .row-3, .row-2 { grid-template-columns: 1fr; }
+      .insights-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Classic Pages — Migration Priority Dashboard</h1>
+  <p>Usage stats across 182,882 pages · 179 unique elements · Feb 2026</p>
+</header>
+
+<div class="grid row-3">
+  <div class="card">
+    <div class="card-title">Total Pages Analysed</div>
+    <div class="kpi-value">182.9K</div>
+    <div class="kpi-sub">Unique classic pages in dataset</div>
+  </div>
+  <div class="card teal">
+    <div class="card-title">Total Element Usages</div>
+    <div class="kpi-value">21.8M</div>
+    <div class="kpi-sub">Across all elements</div>
+  </div>
+  <div class="card gold">
+    <div class="card-title">Unique Elements</div>
+    <div class="kpi-value">179</div>
+    <div class="kpi-sub">Tags, widgets &amp; blocks tracked</div>
+  </div>
+</div>
+
+<!-- Top 15 bar chart -->
+<div class="grid row-1" style="margin-top:24px;">
+  <div class="card">
+    <div class="section-title">Top 15 Elements by Page Reach <span>% of all pages containing element</span></div>
+    <canvas id="barChart" height="90"></canvas>
+  </div>
+</div>
+
+<!-- Scatter + table -->
+<div class="grid row-2" style="margin-top:24px;">
+  <div class="card">
+    <div class="section-title">Breadth vs Depth <span>page reach % vs avg uses per page</span></div>
+    <div class="quad-legend">
+      <div class="quad-badge"><div class="quad-dot" style="background:#ff6b6b"></div>Critical — migrate first</div>
+      <div class="quad-badge"><div class="quad-dot" style="background:#6c63ff"></div>High priority</div>
+      <div class="quad-badge"><div class="quad-dot" style="background:#00d4aa"></div>Niche but intensive</div>
+      <div class="quad-badge"><div class="quad-dot" style="background:#8b90a7"></div>Long tail</div>
+    </div>
+    <canvas id="scatterChart" height="220"></canvas>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Priority Migration Table <span>top 20 by composite score</span></div>
+    <div class="tbl-wrap">
+      <table id="priorityTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Element</th>
+            <th>Pages %</th>
+            <th>Usages</th>
+            <th>Avg/page</th>
+            <th>Priority</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Long tail + insights -->
+<div class="grid row-2" style="margin-top:24px;">
+  <div class="card red">
+    <div class="section-title">Long Tail — Safe to Deprioritize <span>elements on &lt;1% of pages</span></div>
+    <canvas id="longTailChart" height="200"></canvas>
+    <div class="insight-box red" style="margin-top:16px;">
+      <strong>128 elements</strong> appear on fewer than 1% of pages and account for &lt;0.5% of total usages combined — strong candidates to defer or batch-migrate.
+    </div>
+  </div>
+
+  <div class="card teal">
+    <div class="section-title">Key Insights</div>
+    <div class="insights-grid">
+      <div class="insight-box">
+        <strong>🔴 Migrate first:</strong> <code>p</code>, <code>span</code>, <code>div</code>, <code>Section</code>, <code>a</code> — present on 76–95% of pages. Any migration without these is incomplete.
+      </div>
+      <div class="insight-box teal">
+        <strong>🟢 High breadth widgets:</strong> <code>StaticContent</code>, <code>QuickLinks</code>, <code>HeroImage</code>, <code>Accordion</code> — on 40–68% of pages. High business impact.
+      </div>
+      <div class="insight-box gold">
+        <strong>⚡ Hidden intensity:</strong> <code>figure</code> (26.4×), <code>div</code> (29.4×), <code>span</code> (25.9×) — used many times per page even where present. Breaking these breaks layouts.
+      </div>
+      <div class="insight-box red">
+        <strong>🔵 Defer safely:</strong> 128 elements on &lt;1% of pages. Custom widgets like <code>birthday-widget</code>, <code>countdown-widget</code>, <code>joyful-animation-block</code> can wait.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+const raw = [
+  ["p",173292,94.7,3935610,23],
+  ["span",163660,89.49,3986926,25.9],
+  ["div",161299,88.15,4303559,29.4],
+  ["Section",152566,83.39,747003,5.3],
+  ["a",139921,76.47,1708376,12.5],
+  ["StaticContent",124169,68,634305,7.6],
+  ["strong",116170,63.51,1503805,12.8],
+  ["li",113207,61.9,1986638,17.7],
+  ["img",100124,54.72,478119,5.3],
+  ["ul",98357,53.76,1937517,19.7],
+  ["h1",93840,51.26,267216,2.9],
+  ["td",81646,44.61,210319,2.6],
+  ["br",75350,41.18,785956,10.9],
+  ["QuickLinks",74235,41,166844,4],
+  ["HeroImage",72905,40,87838,1.8],
+  ["h3",70837,38.71,350904,5],
+  ["Accordion",68853,38,206871,3.1],
+  ["UserProfile",57054,31.18,291441,5.3],
+  ["h2",51589,28.2,180967,3.5],
+  ["Button",48222,26.35,134216,3.9],
+  ["tr",45059,24.63,115571,2.6],
+  ["hr",36775,20.09,125750,3.4],
+  ["FileList",34809,19.02,119749,3.6],
+  ["NewsFeed",33162,18.12,63187,3.1],
+  ["Infobox",28200,15.41,43808,1.6],
+  ["em",27338,14.94,130651,4.8],
+  ["Portfolio",26631,15,76674,3.1],
+  ["tbody",21455,11.72,55911,2.6],
+  ["th",21455,11.72,55757,2.6],
+  ["table",21253,11.61,55736,2.6],
+  ["b",20384,11.14,136007,6.7],
+  ["NewsStage",18346,10.03,39613,2.4],
+  ["Plugin",17442,10,32289,2],
+  ["CreatePost",17369,9.49,21218,1.4],
+  ["VideoBlock",14015,7.66,40758,2.9],
+  ["ol",12297,6.72,25217,2.4],
+  ["figure",11350,6.2,300025,26.4],
+  ["small",10308,5.63,43247,4.2],
+  ["hashtag-block",6502,3.55,43883,6.7],
+  ["group-subscription-block",5354,2.93,14082,2.6],
+  ["Navigation",4617,2.52,7864,2.6],
+  ["i",4471,2.44,20376,4.6],
+  ["blockquote",4329,2.37,9894,2.3],
+  ["embedded-block",3337,1.82,5370,1.6],
+  ["ms365-document-library",3102,1.7,4190,1.4],
+  ["ms365-file-viewer",1816,0.99,4195,2.3],
+  ["ExternalScript",1287,0.7,1487,1.4],
+  ["ms365-calendar",1275,0.7,3364,2.6],
+  ["pdf-embed",590,0.32,600,1],
+  ["button-block",485,0.27,1205,2.5],
+  ["joyful-animation-block",379,0.21,405,1.1],
+  ["static-content-block",255,0.14,606,2.4],
+  ["countdown-widget",239,0.13,252,1.1],
+  ["ms365-files",210,0.11,515,2.5],
+  ["button",195,0.11,604,3.1],
+  ["accordion-block",124,0.07,202,1.6],
+  ["infobox-block",110,0.06,152,1.4],
+  ["nested-page",84,0.05,164,2],
+  ["iss-miniprofile",81,0.04,84,1],
+  ["ms365-viva-communities",78,0.04,91,1.2],
+  ["custom-worldclock",77,0.04,78,1],
+  ["ms365-teams-feed",77,0.04,81,1.1],
+  ["ms365-sites",76,0.04,79,1],
+  ["ms365-teams-overview",63,0.03,65,1],
+  ["plugin-block",58,0.03,58,1],
+  ["mention-block",56,0.03,263,4.7],
+  ["interactic-widget",54,0.03,75,1.4],
+  ["ms365-planner",40,0.02,40,1],
+  ["ExternalSearchBar",36,0.02,37,1],
+  ["h5",36,0.02,156,4.3],
+  ["html",36,0.02,39,1.1],
+  ["fels-sasi",29,0.02,29,1],
+  ["file-list-block",26,0.01,58,2.3],
+  ["scrolling-banner",25,0.01,25,1],
+];
+
+// Long tail (< 1% pages, rest)
+const longTailRaw = [
+  ["ms365-file-viewer",1816],["ExternalScript",1287],["ms365-calendar",1275],
+  ["pdf-embed",590],["button-block",485],["joyful-animation-block",379],
+  ["static-content-block",255],["countdown-widget",239],["ms365-files",210],
+  ["button",195],["accordion-block",124],["infobox-block",110],
+  ["nested-page",84],["iss-miniprofile",81],["ms365-viva-communities",78],
+  ["custom-worldclock",77],["ms365-teams-feed",77],["ms365-sites",76],
+  ["ms365-teams-overview",63],["plugin-block",58],["mention-block",56],
+  ["interactic-widget",54],["ms365-planner",40],["ExternalSearchBar",36],
+  ["h5",36],["html",36],["fels-sasi",29],["file-list-block",26],
+  ["scrolling-banner",25],["Other (99 elements)",85],
+];
+
+// ── COMPOSITE SCORE ───────────────────────────────────────────────────────────
+const maxPages   = Math.max(...raw.map(d => d[1]));
+const maxUsages  = Math.max(...raw.map(d => d[3]));
+const maxAvg     = Math.max(...raw.map(d => d[4]));
+
+function score(d) {
+  return 0.5*(d[1]/maxPages) + 0.3*(d[3]/maxUsages) + 0.2*(d[4]/maxAvg);
+}
+
+const scored = raw.map(d => ({ name:d[0], pages:d[1], pct:d[2], usages:d[3], avg:d[4], score:score(d) }))
+                  .sort((a,b) => b.score - a.score);
+
+// ── PRIORITY LABEL ────────────────────────────────────────────────────────────
+function priority(d) {
+  if (d.pct >= 50) return { label:'Critical', cls:'badge-critical' };
+  if (d.pct >= 20) return { label:'High', cls:'badge-high' };
+  if (d.pct >= 5)  return { label:'Medium', cls:'badge-medium' };
+  return { label:'Low', cls:'badge-low' };
+}
+
+// ── QUADRANT COLOR ────────────────────────────────────────────────────────────
+function quadColor(d) {
+  const highBreadth = d.pct >= 20;
+  const highDepth   = d.avg >= 8;
+  if (highBreadth && highDepth)  return '#ff6b6b';
+  if (highBreadth && !highDepth) return '#6c63ff';
+  if (!highBreadth && highDepth) return '#00d4aa';
+  return '#8b90a7';
+}
+
+// ── CHART 1: Horizontal bar ───────────────────────────────────────────────────
+const top15 = scored.slice(0, 15);
+
+new Chart(document.getElementById('barChart'), {
+  type: 'bar',
+  data: {
+    labels: top15.map(d => d.name),
+    datasets: [{
+      label: '% Pages',
+      data: top15.map(d => d.pct),
+      backgroundColor: top15.map((_, i) => `hsla(${250 - i*10}, 80%, 65%, 0.85)`),
+      borderRadius: 6,
+      borderSkipped: false,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => {
+            const d = top15[ctx.dataIndex];
+            return [`  ${d.pct}% of pages`, `  ${d.usages.toLocaleString()} total usages`, `  ${d.avg}× avg per page`];
+          }
+        },
+        backgroundColor: '#1a1d27',
+        borderColor: '#2e3347',
+        borderWidth: 1,
+        titleColor: '#e8eaf0',
+        bodyColor: '#8b90a7',
+        padding: 10,
+      }
+    },
+    scales: {
+      x: {
+        grid: { color: '#2e3347' },
+        ticks: { color: '#8b90a7', callback: v => v + '%' },
+        max: 100,
+      },
+      y: { grid: { display: false }, ticks: { color: '#e8eaf0', font: { size: 12 } } }
+    }
+  }
+});
+
+// ── CHART 2: Scatter ──────────────────────────────────────────────────────────
+const scatterData = raw.map(d => ({
+  x: d[2],
+  y: d[4],
+  name: d[0],
+  color: quadColor({ pct: d[2], avg: d[4] }),
+  r: Math.max(4, Math.min(18, Math.sqrt(d[3]) / 55)),
+}));
+
+new Chart(document.getElementById('scatterChart'), {
+  type: 'bubble',
+  data: {
+    datasets: [{
+      data: scatterData.map(d => ({ x: d.x, y: d.y, r: d.r, name: d.name })),
+      backgroundColor: scatterData.map(d => d.color + 'bb'),
+      borderColor: scatterData.map(d => d.color),
+      borderWidth: 1,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => {
+            const d = ctx.raw;
+            return [`  ${d.name}`, `  Breadth: ${d.x}% pages`, `  Depth: ${d.y}× avg/page`];
+          }
+        },
+        backgroundColor: '#1a1d27',
+        borderColor: '#2e3347',
+        borderWidth: 1,
+        titleColor: '#e8eaf0',
+        bodyColor: '#8b90a7',
+        padding: 10,
+      }
+    },
+    scales: {
+      x: {
+        title: { display: true, text: 'Breadth — % of pages', color: '#8b90a7', font: { size: 11 } },
+        grid: { color: '#2e3347' },
+        ticks: { color: '#8b90a7', callback: v => v + '%' },
+      },
+      y: {
+        title: { display: true, text: 'Depth — avg uses per page', color: '#8b90a7', font: { size: 11 } },
+        grid: { color: '#2e3347' },
+        ticks: { color: '#8b90a7' },
+      }
+    }
+  }
+});
+
+// ── TABLE ─────────────────────────────────────────────────────────────────────
+const tbody = document.querySelector('#priorityTable tbody');
+const maxScore = scored[0].score;
+
+scored.slice(0, 20).forEach((d, i) => {
+  const p = priority(d);
+  const barW = Math.round((d.pages / maxPages) * 100);
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td style="color:var(--muted);font-size:0.75rem">${i+1}</td>
+    <td><strong>${d.name}</strong></td>
+    <td>
+      <div style="margin-bottom:4px;font-size:0.8rem">${d.pct}%</div>
+      <div class="bar-bg"><div class="bar-fill" style="width:${barW}%"></div></div>
+    </td>
+    <td style="color:var(--muted)">${(d.usages/1e6).toFixed(1)}M</td>
+    <td style="color:var(--muted)">${d.avg}×</td>
+    <td><span class="badge ${p.cls}">${p.label}</span></td>
+  `;
+  tbody.appendChild(tr);
+});
+
+// ── CHART 3: Long tail bar ────────────────────────────────────────────────────
+const ltTop = longTailRaw.slice(0, 20);
+
+new Chart(document.getElementById('longTailChart'), {
+  type: 'bar',
+  data: {
+    labels: ltTop.map(d => d[0]),
+    datasets: [{
+      label: 'Pages',
+      data: ltTop.map(d => d[1]),
+      backgroundColor: 'rgba(139,144,167,0.35)',
+      borderColor: 'rgba(139,144,167,0.6)',
+      borderWidth: 1,
+      borderRadius: 4,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: { label: ctx => `  ${ctx.raw.toLocaleString()} pages` },
+        backgroundColor: '#1a1d27',
+        borderColor: '#2e3347',
+        borderWidth: 1,
+        bodyColor: '#8b90a7',
+        padding: 10,
+      }
+    },
+    scales: {
+      x: { grid: { color: '#2e3347' }, ticks: { color: '#8b90a7' } },
+      y: { grid: { display: false }, ticks: { color: '#8b90a7', font: { size: 10 } } }
+    }
+  }
+});
+</script>
+</body>
+</html>
