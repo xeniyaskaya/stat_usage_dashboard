@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>Classic Pages Migration — Dashboard Walkthrough</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet" />
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        :root {
+            --bg: #f7f8fc;
+            --surface: #ffffff;
+            --border: #e4e7f0;
+            --text: #1a1d2e;
+            --muted: #6b7280;
+            --accent: #6c63ff;
+            --accent-light: #ede9fe;
+            --teal: #00c9a7;
+            --teal-light: #d1faf4;
+            --red: #ef4444;
+            --red-light: #fee2e2;
+            --gold: #f59e0b;
+            --gold-light: #fef3c7;
+            --orange: #f4a261;
+            --orange-light: #fde8d4;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 15px;
+        }
+
+        /* ── HEADER ── */
+        .doc-header {
+            background: linear-gradient(135deg, #1a1d2e 0%, #2d2060 50%, #1a1d2e 100%);
+            color: #fff;
+            padding: 60px 40px 50px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .doc-header::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at 30% 50%, rgba(108, 99, 255, .3) 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 50%, rgba(0, 201, 167, .2) 0%, transparent 60%);
+        }
+
+        .doc-header>* {
+            position: relative;
+            z-index: 1
+        }
+
+        .doc-header .eyebrow {
+            display: inline-block;
+            background: rgba(108, 99, 255, .3);
+            border: 1px solid rgba(108, 99, 255, .5);
+            color: #a78bfa;
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            padding: 4px 14px;
+            border-radius: 20px;
+            margin-bottom: 18px;
+        }
+
+        .doc-header h1 {
+            font-size: 2.4rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #fff 0%, #c4b5fd 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .doc-header p {
+            color: rgba(255, 255, 255, .65);
+            font-size: 0.95rem;
+            max-width: 560px;
+            margin: 0 auto 28px;
+        }
+
+        .header-pills {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap
+        }
+
+        .pill {
+            background: rgba(255, 255, 255, .1);
+            border: 1px solid rgba(255, 255, 255, .2);
+            color: rgba(255, 255, 255, .85);
+            font-size: 0.78rem;
+            font-weight: 500;
+            padding: 5px 14px;
+            border-radius: 20px;
+        }
+
+        /* ── LAYOUT ── */
+        .doc-body {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 48px 24px 80px
+        }
+
+        /* ── TOC ── */
+        .toc {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 24px 28px;
+            margin-bottom: 48px;
+        }
+
+        .toc h2 {
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .1em;
+            color: var(--muted);
+            margin-bottom: 14px
+        }
+
+        .toc ol {
+            padding-left: 20px
+        }
+
+        .toc li {
+            margin-bottom: 6px
+        }
+
+        .toc a {
+            color: var(--accent);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500
+        }
+
+        .toc a:hover {
+            text-decoration: underline
+        }
+
+        /* ── SECTION ── */
+        .section {
+            margin-bottom: 56px
+        }
+
+        .section-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--accent-light);
+            color: var(--accent);
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .1em;
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin-bottom: 12px;
+        }
+
+        h2.section-title {
+            font-size: 1.6rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+
+        .section-desc {
+            color: var(--muted);
+            font-size: 0.9rem;
+            margin-bottom: 28px;
+            max-width: 640px
+        }
+
+        /* ── CARDS ── */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 28px
+        }
+
+        .card-grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 28px
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 20px 22px;
+        }
+
+        .stat-card.teal {
+            border-color: var(--teal);
+            background: var(--teal-light)
+        }
+
+        .stat-card.red {
+            border-color: var(--red);
+            background: var(--red-light)
+        }
+
+        .stat-card.gold {
+            border-color: var(--gold);
+            background: var(--gold-light)
+        }
+
+        .stat-card.purple {
+            border-color: var(--accent);
+            background: var(--accent-light)
+        }
+
+        .stat-card .label {
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            color: var(--muted);
+            margin-bottom: 6px
+        }
+
+        .stat-card.teal .label {
+            color: #0d9488
+        }
+
+        .stat-card.red .label {
+            color: #dc2626
+        }
+
+        .stat-card.gold .label {
+            color: #d97706
+        }
+
+        .stat-card.purple .label {
+            color: var(--accent)
+        }
+
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            color: var(--text)
+        }
+
+        .stat-card .sub {
+            font-size: 0.78rem;
+            color: var(--muted);
+            margin-top: 2px
+        }
+
+        /* ── CALLOUT ── */
+        .callout {
+            border-radius: 12px;
+            padding: 18px 22px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+        }
+
+        .callout.info {
+            background: var(--accent-light);
+            border-left: 4px solid var(--accent)
+        }
+
+        .callout.tip {
+            background: var(--teal-light);
+            border-left: 4px solid var(--teal)
+        }
+
+        .callout.warn {
+            background: var(--gold-light);
+            border-left: 4px solid var(--gold)
+        }
+
+        .callout.danger {
+            background: var(--red-light);
+            border-left: 4px solid var(--red)
+        }
+
+        .callout-icon {
+            font-size: 1.2rem;
+            flex-shrink: 0;
+            margin-top: 1px
+        }
+
+        .callout-body {
+            font-size: 0.88rem;
+            line-height: 1.6
+        }
+
+        .callout-body strong {
+            font-weight: 700;
+            display: block;
+            margin-bottom: 3px
+        }
+
+        /* ── TABLE ── */
+        .table-wrap {
+            overflow-x: auto;
+            margin-bottom: 24px
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem
+        }
+
+        th {
+            background: var(--bg);
+            color: var(--muted);
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .07em;
+            padding: 10px 14px;
+            text-align: left;
+            border-bottom: 2px solid var(--border);
+        }
+
+        td {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top
+        }
+
+        tr:last-child td {
+            border-bottom: none
+        }
+
+        tr:hover td {
+            background: var(--bg)
+        }
+
+        .el {
+            font-family: monospace;
+            font-size: 0.85rem;
+            background: var(--accent-light);
+            color: var(--accent);
+            padding: 2px 7px;
+            border-radius: 5px
+        }
+
+        /* ── BADGE ── */
+        .badge {
+            display: inline-block;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+
+        .b-yes {
+            background: #d1faf4;
+            color: #0d9488
+        }
+
+        .b-no {
+            background: #fee2e2;
+            color: #dc2626
+        }
+
+        .b-partial {
+            background: #fef3c7;
+            color: #d97706
+        }
+
+        .b-todo {
+            background: #ede9fe;
+            color: #7c3aed
+        }
+
+        .b-wont {
+            background: #f3f4f6;
+            color: #6b7280
+        }
+
+        .b-q {
+            background: #fde8d4;
+            color: #c2410c
+        }
+
+        /* ── FORMULA BOX ── */
+        .formula-box {
+            background: #1a1d2e;
+            border-radius: 12px;
+            padding: 22px 28px;
+            margin: 20px 0;
+            font-family: monospace;
+            color: #e8eaf0;
+            font-size: 1rem;
+            line-height: 1.8;
+        }
+
+        .formula-box .comment {
+            color: #6b7280;
+            font-size: 0.82rem
+        }
+
+        .formula-box .hl {
+            color: #a78bfa
+        }
+
+        .formula-box .hl2 {
+            color: #00d4aa
+        }
+
+        /* ── TAB VISUAL ── */
+        .tab-visual {
+            display: flex;
+            gap: 0;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+            margin-bottom: 28px;
+        }
+
+        .tab-item {
+            flex: 1;
+            padding: 18px 16px;
+            border-right: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .tab-item:last-child {
+            border-right: none
+        }
+
+        .tab-item .tab-icon {
+            font-size: 1.4rem;
+            margin-bottom: 6px
+        }
+
+        .tab-item .tab-name {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 3px
+        }
+
+        .tab-item .tab-for {
+            font-size: 0.7rem;
+            color: var(--muted)
+        }
+
+        .tab-item.active {
+            background: var(--accent-light)
+        }
+
+        .tab-item.active .tab-name {
+            color: var(--accent)
+        }
+
+        /* ── COLOUR KEY ── */
+        .colour-key {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin: 16px 0
+        }
+
+        .ck-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.82rem
+        }
+
+        .ck-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            flex-shrink: 0
+        }
+
+        /* ── DIVIDER ── */
+        hr {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 48px 0
+        }
+
+        /* ── LINKS ── */
+        .link-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--accent);
+            color: #fff;
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 10px 20px;
+            border-radius: 10px;
+            text-decoration: none;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            transition: opacity .15s;
+        }
+
+        .link-btn:hover {
+            opacity: .85
+        }
+
+        .link-btn.secondary {
+            background: var(--surface);
+            color: var(--accent);
+            border: 1.5px solid var(--accent);
+        }
+
+        /* ── FOOTER ── */
+        .doc-footer {
+            text-align: center;
+            color: var(--muted);
+            font-size: 0.8rem;
+            padding: 32px 24px;
+            border-top: 1px solid var(--border);
+        }
+
+        @media(max-width:640px) {
+
+            .card-grid,
+            .card-grid-2 {
+                grid-template-columns: 1fr
+            }
+
+            .tab-visual {
+                flex-direction: column
+            }
+
+            .tab-item {
+                border-right: none;
+                border-bottom: 1px solid var(--border)
+            }
+
+            .doc-header h1 {
+                font-size: 1.7rem
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ══ HEADER ══════════════════════════════════════════════════════════════ -->
+    <header class="doc-header">
+        <div class="eyebrow">📊 Product Analytics</div>
+        <h1>Classic Pages Migration<br>Dashboard Walkthrough</h1>
+        <p>A guide to the two interactive dashboards built to support the classic-to-new-editor migration — what they
+            show, how to read them, and how each metric is calculated.</p>
+        <div class="header-pills">
+            <span class="pill">📅 Feb 2026</span>
+            <span class="pill">179 elements analysed</span>
+            <span class="pill">2 data sources</span>
+            <span class="pill">4 dashboard tabs</span>
+        </div>
+    </header>
+
+    <!-- ══ BODY ════════════════════════════════════════════════════════════════ -->
+    <div class="doc-body">
+
+        <!-- TOC -->
+        <nav class="toc">
+            <h2>Contents</h2>
+            <ol>
+                <li><a href="#overview">What was built</a></li>
+                <li><a href="#dashboard1">Dashboard 1 — Usage Stats</a></li>
+                <li><a href="#dashboard2">Dashboard 2 — Migration Readiness</a></li>
+                <li><a href="#tabs">The 4 tabs explained</a></li>
+                <li><a href="#risk">Risk Score — how it's calculated</a></li>
+                <li><a href="#findings">Key findings</a></li>
+                <li><a href="#access">How to access</a></li>
+            </ol>
+        </nav>
+
+        <!-- ── SECTION 1: WHAT WAS BUILT ── -->
+        <section class="section" id="overview">
+            <div class="section-label">🏗 Overview</div>
+            <h2 class="section-title">What was built</h2>
+            <p class="section-desc">Two standalone HTML dashboards — no server, no login, open in any browser. Built
+                from two CSV exports.</p>
+
+            <div class="card-grid">
+                <div class="stat-card teal">
+                    <div class="label">Total pages analysed</div>
+                    <div class="value">182.9K</div>
+                    <div class="sub">classic pages in the dataset</div>
+                </div>
+                <div class="stat-card purple">
+                    <div class="label">Total element usages</div>
+                    <div class="value">21.8M</div>
+                    <div class="sub">across all pages</div>
+                </div>
+                <div class="stat-card gold">
+                    <div class="label">Unique elements</div>
+                    <div class="value">179</div>
+                    <div class="sub">HTML tags + widgets tracked</div>
+                </div>
+            </div>
+
+            <div class="callout info">
+                <div class="callout-icon">ℹ️</div>
+                <div class="callout-body">
+                    <strong>Two data sources</strong>
+                    <b>CSV 1</b> — Usage stats: how many pages each element appears on, total usages, average per
+                    page.<br>
+                    <b>CSV 2</b> — Migration matrix: for each element variant, whether it's supported in the new editor,
+                    implementation status, designer block mapping, and engineering notes.
+                </div>
+            </div>
+        </section>
+
+        <hr>
+
+        <!-- ── SECTION 2: DASHBOARD 1 ── -->
+        <section class="section" id="dashboard1">
+            <div class="section-label">📈 Dashboard 1</div>
+            <h2 class="section-title">Usage Stats Dashboard</h2>
+            <p class="section-desc">Answers: <em>which elements are most widely used, and which are safe to defer?</em>
+            </p>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Section</th>
+                            <th>What it shows</th>
+                            <th>How to use it</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>KPI cards</strong></td>
+                            <td>Headline numbers — 182.9K pages, 21.8M usages, 179 elements</td>
+                            <td>Quick sanity check on dataset size</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Top 15 bar chart</strong></td>
+                            <td>Elements with the widest page reach (%)</td>
+                            <td>These must be migrated first — they appear on the majority of pages</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Breadth vs Depth bubble</strong></td>
+                            <td>X = % pages, Y = avg uses/page, bubble size = total usages</td>
+                            <td>Find elements that are low-breadth but high-depth (breaking them breaks layouts)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Priority Migration Table</strong></td>
+                            <td>Top 20 by composite score: 50% breadth + 30% total usages + 20% depth</td>
+                            <td>Use as a starting backlog for migration sprint planning</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Long Tail bar</strong></td>
+                            <td>128 elements on &lt;1% of pages</td>
+                            <td>Safe to batch-migrate or defer — minimal user impact</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="callout tip">
+                <div class="callout-icon">💡</div>
+                <div class="callout-body">
+                    <strong>Hidden intensity — watch out for <code>figure</code></strong>
+                    Only on 6.2% of pages, but used 26.4× per page on average. Breaking it breaks layouts badly even
+                    though its page reach looks low.
+                </div>
+            </div>
+        </section>
+
+        <hr>
+
+        <!-- ── SECTION 3: DASHBOARD 2 ── -->
+        <section class="section" id="dashboard2">
+            <div class="section-label">🗺 Dashboard 2</div>
+            <h2 class="section-title">Migration Readiness Dashboard</h2>
+            <p class="section-desc">Combines usage stats with migration compatibility data. Shows <em>what's done,
+                    what's blocked, and what needs a decision</em>.</p>
+
+            <div class="card-grid">
+                <div class="stat-card teal">
+                    <div class="label">✅ Fully Supported</div>
+                    <div class="value">39</div>
+                    <div class="sub">variants implemented YES</div>
+                </div>
+                <div class="stat-card gold">
+                    <div class="label">🔧 Partial / TODO</div>
+                    <div class="value">63</div>
+                    <div class="sub">need more dev work</div>
+                </div>
+                <div class="stat-card red">
+                    <div class="label">🚫 Blocked / Open ?</div>
+                    <div class="value">79</div>
+                    <div class="sub">NO + WON'T DO + unresolved ?</div>
+                </div>
+            </div>
+
+            <div class="callout warn">
+                <div class="callout-icon">⚠️</div>
+                <div class="callout-body">
+                    <strong>More than half of variants need action</strong>
+                    79 variants are blocked or unresolved, and 63 more are in progress. Only 39 are fully done. This
+                    dashboard helps you prioritise which of those 142 matter most.
+                </div>
+            </div>
+        </section>
+
+        <hr>
+
+        <!-- ── SECTION 4: THE 4 TABS ── -->
+        <section class="section" id="tabs">
+            <div class="section-label">🗂 Tabs</div>
+            <h2 class="section-title">The 4 tabs explained</h2>
+            <p class="section-desc">Each tab is designed for a specific audience and use case.</p>
+
+            <div class="tab-visual">
+                <div class="tab-item active">
+                    <div class="tab-icon">📊</div>
+                    <div class="tab-name">Overview</div>
+                    <div class="tab-for">For: PMs</div>
+                </div>
+                <div class="tab-item">
+                    <div class="tab-icon">🛠</div>
+                    <div class="tab-name">Dev Tracker</div>
+                    <div class="tab-for">For: Devs</div>
+                </div>
+                <div class="tab-item">
+                    <div class="tab-icon">📣</div>
+                    <div class="tab-name">Stakeholder View</div>
+                    <div class="tab-for">For: Other PMs</div>
+                </div>
+                <div class="tab-item">
+                    <div class="tab-icon">⚠️</div>
+                    <div class="tab-name">Risk Matrix</div>
+                    <div class="tab-for">For: Everyone</div>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Tab</th>
+                            <th>Audience</th>
+                            <th>What it contains</th>
+                            <th>Action to take</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>📊 Overview</strong></td>
+                            <td>Migration PM</td>
+                            <td>KPI cards, status donut chart, top risk bar chart, full element table</td>
+                            <td>Get a quick read on overall migration health</td>
+                        </tr>
+                        <tr>
+                            <td><strong>🛠 Dev Tracker</strong></td>
+                            <td>Dev team</td>
+                            <td>Filterable table of all TODO / PARTIALLY / ? variants with notes and designer block
+                                mapping</td>
+                            <td>Filter to your status, find your work queue</td>
+                        </tr>
+                        <tr>
+                            <td><strong>📣 Stakeholder View</strong></td>
+                            <td>Other PMs / owners</td>
+                            <td>High-usage blocked elements · Decisions still needed (?) · Won't-migrate workarounds to
+                                confirm</td>
+                            <td>Identify what YOUR team needs to deliver or decide</td>
+                        </tr>
+                        <tr>
+                            <td><strong>⚠️ Risk Matrix</strong></td>
+                            <td>Everyone</td>
+                            <td>Bubble chart (reach × % unresolved, sized by usages) + full risk-ranked table</td>
+                            <td>Spot the top-right quadrant — high reach + many open questions</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="callout info">
+                <div class="callout-icon">📣</div>
+                <div class="callout-body">
+                    <strong>How to use the Stakeholder View tab</strong>
+                    Share the dashboard link with other team PMs and ask them to open the Stakeholder View tab. The
+                    <em>Blocker type</em> column tells them exactly what they need to deliver:
+                    <ul style="margin-top:8px;padding-left:18px;line-height:2">
+                        <li><strong>Product sign-off needed</strong> — a product decision is required before dev can
+                            proceed</li>
+                        <li><strong>Design spec needed</strong> — no mapping exists yet in the new editor</li>
+                        <li><strong>Open question</strong> — unclear ownership or approach, needs discussion</li>
+                        <li><strong>Won't migrate</strong> — intentional; confirm workaround is acceptable for their
+                            users</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <hr>
+
+        <!-- ── SECTION 5: RISK SCORE ── -->
+        <section class="section" id="risk">
+            <div class="section-label">🧮 Methodology</div>
+            <h2 class="section-title">Risk Score — how it's calculated</h2>
+            <p class="section-desc">Used in "Top Elements by Risk Score" (Overview tab) and the Risk Matrix tab.</p>
+
+            <div class="formula-box">
+                <span class="hl">Risk Score</span> = (<span class="hl2">page reach %</span>) × (<span
+                    class="hl">unresolved variants</span> / <span class="hl2">total variants</span>)<br>
+                <br>
+                <span class="comment">// "Unresolved" = variants marked ? or TODO</span><br>
+                <span class="comment">// Result ranges from 0 (fully done) to 100 (100% reach, 100% unresolved)</span>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Element</th>
+                            <th>Page reach</th>
+                            <th>Unresolved</th>
+                            <th>Total variants</th>
+                            <th>Risk score</th>
+                            <th>Priority</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="el">a</span></td>
+                            <td>76.5%</td>
+                            <td>5</td>
+                            <td>8</td>
+                            <td><strong>47.8</strong></td>
+                            <td><span class="badge b-no">🔴 High</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="el">table</span></td>
+                            <td>11.6%</td>
+                            <td>9</td>
+                            <td>16</td>
+                            <td><strong>6.5</strong></td>
+                            <td><span class="badge b-no">🔴 High</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="el">Section</span></td>
+                            <td>83.4%</td>
+                            <td>2</td>
+                            <td>7</td>
+                            <td><strong>23.8</strong></td>
+                            <td><span class="badge b-no">🔴 High</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="el">span</span></td>
+                            <td>89.5%</td>
+                            <td>2</td>
+                            <td>6</td>
+                            <td><strong>29.8</strong></td>
+                            <td><span class="badge b-no">🔴 High</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="el">p</span></td>
+                            <td>94.7%</td>
+                            <td>0</td>
+                            <td>3</td>
+                            <td><strong>0</strong></td>
+                            <td><span class="badge b-yes">🟢 Done</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="el">hr</span></td>
+                            <td>20.1%</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td><strong>0</strong></td>
+                            <td><span class="badge b-yes">🟢 Done</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="callout tip">
+                <div class="callout-icon">💡</div>
+                <div class="callout-body">
+                    <strong>Key insight</strong>
+                    <code>p</code> (paragraph) is on 94.7% of pages but scores <strong>0 risk</strong> — it's fully
+                    implemented. <code>a</code> (links) scores 47.8 because it's on 76% of pages AND has 5 unresolved
+                    variants. Focus on the top-right quadrant of the Risk Matrix.
+                </div>
+            </div>
+
+            <h3 style="font-size:1rem;font-weight:700;margin:28px 0 12px">Bubble chart colour key</h3>
+            <div class="colour-key">
+                <div class="ck-item">
+                    <div class="ck-dot" style="background:#ff6b6b"></div> <strong>Red</strong> — has NO or WON'T DO
+                    variants
+                </div>
+                <div class="ck-item">
+                    <div class="ck-dot" style="background:#f4a261"></div> <strong>Orange</strong> — has unresolved ?
+                    variants
+                </div>
+                <div class="ck-item">
+                    <div class="ck-dot" style="background:#ffd166"></div> <strong>Yellow</strong> — PARTIAL / TODO only
+                </div>
+                <div class="ck-item">
+                    <div class="ck-dot" style="background:#00d4aa"></div> <strong>Teal</strong> — all variants resolved
+                </div>
+            </div>
+        </section>
+
+        <hr>
+
+        <!-- ── SECTION 6: KEY FINDINGS ── -->
+        <section class="section" id="findings">
+            <div class="section-label">🔍 Key Findings</div>
+            <h2 class="section-title">Key findings</h2>
+            <p class="section-desc">Headline takeaways from the combined analysis.</p>
+
+            <div class="callout danger">
+                <div class="callout-icon">🔴</div>
+                <div class="callout-body">
+                    <strong>Migrate first — Critical (&gt;50% page reach)</strong>
+                    <span class="el">p</span> (94.7%) · <span class="el">span</span> (89.5%) · <span
+                        class="el">div</span> (88.2%) · <span class="el">Section</span> (83.4%) · <span
+                        class="el">a</span> (76.5%) · <span class="el">StaticContent</span> (68%) · <span
+                        class="el">strong</span> (63.5%) · <span class="el">li</span> (61.9%) · <span
+                        class="el">img</span> (54.7%) · <span class="el">ul</span> (53.8%) · <span class="el">h1</span>
+                    (51.3%)<br><br>
+                    These appear on the majority of classic pages. Any migration without them is incomplete.
+                </div>
+            </div>
+
+            <div class="callout warn">
+                <div class="callout-icon">🟡</div>
+                <div class="callout-body">
+                    <strong>High-risk open questions — need decisions NOW</strong>
+                    <span class="el">a</span> has 5 unresolved variants (anchor refs, image links, complex content,
+                    nested tags, colour). <span class="el">table</span> has 9 unresolved variants. <span
+                        class="el">span</span> has 2. These are high-reach elements with open ?s blocking dev work.
+                </div>
+            </div>
+
+            <div class="callout tip">
+                <div class="callout-icon">💡</div>
+                <div class="callout-body">
+                    <strong>Hidden intensity — <code>figure</code></strong>
+                    Only 6.2% page reach, but 26.4× average uses per page. Breaking it breaks layouts badly even though
+                    it looks low-priority by reach alone.
+                </div>
+            </div>
+
+            <div class="callout info">
+                <div class="callout-icon">✅</div>
+                <div class="callout-body">
+                    <strong>Safe to defer — 128 elements</strong>
+                    128 elements appear on &lt;1% of pages and account for &lt;0.5% of total usages. Examples: <span
+                        class="el">birthday-widget</span>, <span class="el">countdown-widget</span>, <span
+                        class="el">pdf-embed</span>. Batch-migrate or defer these.
+                </div>
+            </div>
+        </section>
+
+        <hr>
+
+        <!-- ── SECTION 7: ACCESS ── -->
+        <section class="section" id="access">
+            <div class="section-label">🔗 Access</div>
+            <h2 class="section-title">How to access the dashboards</h2>
+            <p class="section-desc">Both dashboards are single HTML files — no login, no server needed.</p>
+
+            <div class="card-grid-2">
+                <div class="stat-card">
+                    <div class="label">Dashboard 1 — Usage Stats</div>
+                    <div style="font-size:0.85rem;color:var(--muted);margin-top:8px;line-height:1.6">
+                        Shows page reach, breadth vs depth, and priority migration table for all 179 elements.
+                    </div>
+                    <div style="margin-top:14px">
+                        <a class="link-btn"
+                            href="https://xeniyaskaya.github.io/stat_usage_dashboard/usage_stats_dashboard.html"
+                            target="_blank">🌐 Open live</a>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Dashboard 2 — Migration Readiness</div>
+                    <div style="font-size:0.85rem;color:var(--muted);margin-top:8px;line-height:1.6">
+                        Combined view: usage stats × migration compatibility. 4 tabs for PM, Dev, Stakeholder, and Risk
+                        views.
+                    </div>
+                    <div style="margin-top:14px">
+                        <a class="link-btn secondary" href="migration_dashboard.html" target="_blank">📂 Open local
+                            file</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="callout info">
+                <div class="callout-icon">📤</div>
+                <div class="callout-body">
+                    <strong>To share Dashboard 2 publicly</strong>
+                    Upload <code>migration_dashboard.html</code> to the same GitHub repo
+                    (<code>xeniyaskaya/stat_usage_dashboard</code>) and it will be accessible at the GitHub Pages URL —
+                    same as Dashboard 1.
+                </div>
+            </div>
+        </section>
+
+    </div><!-- /doc-body -->
+
+    <footer class="doc-footer">
+        Classic Pages Migration · Product Analytics · Feb 2026 · Built with usage stats + migration compatibility CSVs
+    </footer>
+
+</body>
+
+</html>

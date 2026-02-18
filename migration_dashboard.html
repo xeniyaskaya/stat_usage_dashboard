@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>Migration Readiness Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        :root {
+            --bg: #0f1117;
+            --surface: #1a1d27;
+            --surface2: #222636;
+            --border: #2e3347;
+            --yes: #00d4aa;
+            --partial: #ffd166;
+            --no: #ff6b6b;
+            --wontdo: #8b90a7;
+            --todo: #6c63ff;
+            --unknown: #f4a261;
+            --text: #e8eaf0;
+            --muted: #8b90a7;
+            --radius: 14px;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 32px 24px 60px
+        }
+
+        header {
+            max-width: 1280px;
+            margin: 0 auto 28px
+        }
+
+        header h1 {
+            font-size: 1.85rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #a78bfa, #6c63ff, #00d4aa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 6px
+        }
+
+        header p {
+            color: var(--muted);
+            font-size: 0.9rem
+        }
+
+        .wrap {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 22px
+        }
+
+        /* tabs */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap
+        }
+
+        .tab {
+            padding: 8px 20px;
+            border-radius: 30px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--muted);
+            font-size: 0.83rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all .2s
+        }
+
+        .tab.active {
+            background: var(--todo);
+            border-color: var(--todo);
+            color: #fff
+        }
+
+        .tab:hover:not(.active) {
+            border-color: var(--todo);
+            color: var(--text)
+        }
+
+        .view {
+            display: none
+        }
+
+        .view.active {
+            display: contents
+        }
+
+        /* grid */
+        .row3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px
+        }
+
+        .row2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px
+        }
+
+        .row1 {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 18px
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 22px;
+            position: relative;
+            overflow: hidden
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--todo), var(--yes));
+            border-radius: var(--radius) var(--radius) 0 0
+        }
+
+        .card.red::before {
+            background: linear-gradient(90deg, var(--no), #ff9a3c)
+        }
+
+        .card.teal::before {
+            background: linear-gradient(90deg, var(--yes), #00b4d8)
+        }
+
+        .card.gold::before {
+            background: linear-gradient(90deg, var(--partial), #f4a261)
+        }
+
+        .card.grey::before {
+            background: linear-gradient(90deg, #555, #888)
+        }
+
+        .card-title {
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            color: var(--muted);
+            margin-bottom: 6px
+        }
+
+        .kpi {
+            font-size: 2.2rem;
+            font-weight: 700;
+            line-height: 1
+        }
+
+        .kpi-sub {
+            font-size: 0.8rem;
+            color: var(--muted);
+            margin-top: 4px
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 16px
+        }
+
+        .section-title span {
+            font-size: 0.75rem;
+            font-weight: 400;
+            color: var(--muted);
+            margin-left: 8px
+        }
+
+        /* status badges */
+        .badge {
+            display: inline-block;
+            padding: 2px 9px;
+            border-radius: 20px;
+            font-size: 0.68rem;
+            font-weight: 600;
+            white-space: nowrap
+        }
+
+        .s-yes {
+            background: rgba(0, 212, 170, .18);
+            color: var(--yes)
+        }
+
+        .s-partial {
+            background: rgba(255, 209, 102, .18);
+            color: var(--partial)
+        }
+
+        .s-no {
+            background: rgba(255, 107, 107, .18);
+            color: var(--no)
+        }
+
+        .s-wontdo {
+            background: rgba(139, 144, 167, .18);
+            color: var(--wontdo)
+        }
+
+        .s-todo {
+            background: rgba(108, 99, 255, .18);
+            color: var(--todo)
+        }
+
+        .s-unknown {
+            background: rgba(244, 162, 97, .18);
+            color: var(--unknown)
+        }
+
+        .s-na {
+            background: rgba(139, 144, 167, .1);
+            color: #555
+        }
+
+        /* table */
+        .tbl-wrap {
+            overflow-x: auto;
+            max-height: 480px;
+            overflow-y: auto
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            background: var(--surface);
+            text-align: left;
+            padding: 8px 10px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: var(--muted);
+            border-bottom: 1px solid var(--border);
+            z-index: 1
+        }
+
+        tbody tr {
+            border-bottom: 1px solid var(--border);
+            transition: background .15s
+        }
+
+        tbody tr:last-child {
+            border-bottom: none
+        }
+
+        tbody tr:hover {
+            background: var(--surface2)
+        }
+
+        tbody td {
+            padding: 8px 10px;
+            color: var(--text);
+            vertical-align: middle
+        }
+
+        .el-name {
+            font-weight: 600;
+            color: var(--text)
+        }
+
+        .variant-name {
+            color: var(--muted);
+            font-size: 0.78rem
+        }
+
+        /* risk bar */
+        .rbar {
+            background: var(--border);
+            border-radius: 4px;
+            height: 6px;
+            overflow: hidden
+        }
+
+        .rbar-fill {
+            height: 100%;
+            border-radius: 4px
+        }
+
+        /* legend */
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 14px
+        }
+
+        .leg-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            color: var(--muted)
+        }
+
+        .leg-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0
+        }
+
+        /* insight box */
+        .insight {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--todo);
+            border-radius: 8px;
+            padding: 13px 15px;
+            font-size: 0.82rem;
+            line-height: 1.6;
+            color: var(--muted)
+        }
+
+        .insight strong {
+            color: var(--text)
+        }
+
+        .insight.red {
+            border-left-color: var(--no)
+        }
+
+        .insight.teal {
+            border-left-color: var(--yes)
+        }
+
+        .insight.gold {
+            border-left-color: var(--partial)
+        }
+
+        .ig2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 14px
+        }
+
+        /* filter bar */
+        .filters {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 14px
+        }
+
+        .filter-btn {
+            padding: 4px 12px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--muted);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all .15s
+        }
+
+        .filter-btn.on {
+            border-color: currentColor
+        }
+
+        .filter-btn.on.f-yes {
+            color: var(--yes);
+            background: rgba(0, 212, 170, .1)
+        }
+
+        .filter-btn.on.f-partial {
+            color: var(--partial);
+            background: rgba(255, 209, 102, .1)
+        }
+
+        .filter-btn.on.f-no {
+            color: var(--no);
+            background: rgba(255, 107, 107, .1)
+        }
+
+        .filter-btn.on.f-todo {
+            color: var(--todo);
+            background: rgba(108, 99, 255, .1)
+        }
+
+        .filter-btn.on.f-wontdo {
+            color: var(--wontdo);
+            background: rgba(139, 144, 167, .1)
+        }
+
+        .filter-btn.on.f-unknown {
+            color: var(--unknown);
+            background: rgba(244, 162, 97, .1)
+        }
+
+        .search-box {
+            padding: 5px 12px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            background: var(--surface2);
+            color: var(--text);
+            font-size: 0.8rem;
+            outline: none;
+            width: 200px
+        }
+
+        .search-box::placeholder {
+            color: var(--muted)
+        }
+
+        /* stakeholder callout */
+        .callout {
+            background: linear-gradient(135deg, rgba(108, 99, 255, .12), rgba(0, 212, 170, .08));
+            border: 1px solid rgba(108, 99, 255, .3);
+            border-radius: var(--radius);
+            padding: 18px 22px
+        }
+
+        .callout h3 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #a78bfa
+        }
+
+        .callout p {
+            font-size: 0.83rem;
+            color: var(--muted);
+            line-height: 1.6
+        }
+
+        .callout ul {
+            margin: 10px 0 0 18px;
+            font-size: 0.83rem;
+            color: var(--muted);
+            line-height: 1.8
+        }
+
+        .callout ul li strong {
+            color: var(--text)
+        }
+
+        /* info tooltip */
+        .info-wrap {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px
+        }
+
+        .info-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(108, 99, 255, .2);
+            border: 1px solid rgba(108, 99, 255, .4);
+            color: #a78bfa;
+            font-size: 0.65rem;
+            cursor: help;
+            flex-shrink: 0;
+            line-height: 1;
+        }
+
+        .info-icon:hover+.info-tip,
+        .info-tip:hover {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0)
+        }
+
+        .info-tip {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            z-index: 100;
+            background: #1a1d27;
+            border: 1px solid #2e3347;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 0.75rem;
+            line-height: 1.55;
+            color: #8b90a7;
+            width: 280px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, .4);
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(-4px);
+            transition: all .2s;
+        }
+
+        .info-tip strong {
+            color: #e8eaf0;
+            display: block;
+            margin-bottom: 4px
+        }
+
+        .info-tip code {
+            background: rgba(108, 99, 255, .15);
+            color: #a78bfa;
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-size: 0.72rem
+        }
+
+        @media(max-width:900px) {
+
+            .row3,
+            .row2 {
+                grid-template-columns: 1fr
+            }
+
+            .ig2 {
+                grid-template-columns: 1fr
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Classic Pages — Migration Readiness Dashboard</h1>
+        <p>Combined view: usage stats × migration compatibility · 179 elements · Feb 2026</p>
+    </header>
+
+    <div class="wrap">
+        <!-- TABS -->
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('overview')">📊 Overview</button>
+            <button class="tab" onclick="switchTab('tracker')">🛠 Dev Tracker</button>
+            <button class="tab" onclick="switchTab('stakeholder')">📣 Stakeholder View</button>
+            <button class="tab" onclick="switchTab('risk')">⚠️ Risk Matrix</button>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════ OVERVIEW TAB -->
+        <div id="tab-overview" class="view active">
+            <div class="row3">
+                <div class="card teal">
+                    <div class="card-title">Fully Supported</div>
+                    <div class="kpi" id="kpi-yes">—</div>
+                    <div class="kpi-sub">variants implemented YES</div>
+                </div>
+                <div class="card gold">
+                    <div class="card-title">Partial / TODO</div>
+                    <div class="kpi" id="kpi-partial">—</div>
+                    <div class="kpi-sub">need more work</div>
+                </div>
+                <div class="card red">
+                    <div class="card-title">Blocked / Open ?</div>
+                    <div class="kpi" id="kpi-blocked">—</div>
+                    <div class="kpi-sub">NO + WON'T DO + unresolved ?</div>
+                </div>
+            </div>
+
+            <div class="row2">
+                <div class="card">
+                    <div class="section-title">
+                        <div class="info-wrap">Migration Status Breakdown <span>by variant count</span><span
+                                class="info-icon">💡</span>
+                            <div class="info-tip"><strong>How it's counted</strong>Each row in the migration CSV is one
+                                <em>variant</em> (e.g. <code>&lt;a&gt; image link</code>). This chart counts how many
+                                variants fall into each status category based on the <em>New Editor Support</em> column.
+                                Variants with no status are counted as <code>?</code>.</div>
+                        </div>
+                    </div>
+                    <canvas id="donutChart" height="220"></canvas>
+                </div>
+                <div class="card">
+                    <div class="section-title">
+                        <div class="info-wrap">Top Elements by Risk Score <span>usage × unresolved gaps</span><span
+                                class="info-icon">💡</span>
+                            <div class="info-tip"><strong>Risk Score
+                                    formula</strong><code>Risk = (page reach %) × (unresolved variants / total variants)</code><br><br>"Unresolved"
+                                = variants marked <code>?</code> or <code>TODO</code>. A fully-implemented element
+                                scores 0 even if it's on every page. The danger zone is high usage <em>and</em> many
+                                open questions.</div>
+                        </div>
+                    </div>
+                    <canvas id="riskBar" height="220"></canvas>
+                </div>
+            </div>
+
+            <div class="row1">
+                <div class="card">
+                    <div class="section-title">
+                        <div class="info-wrap">Element Status Overview <span>one row per element — scroll for
+                                all</span><span class="info-icon">💡</span>
+                            <div class="info-tip"><strong>One row = one element</strong>"Support" shows the
+                                <em>worst</em> status across all variants of that element. "Open ?s" counts variants
+                                still marked <code>?</code> or <code>TODO</code>. Risk level combines page reach with
+                                the open question ratio.</div>
+                        </div>
+                    </div>
+                    <div class="tbl-wrap">
+                        <table id="overviewTable">
+                            <thead>
+                                <tr>
+                                    <th>Element</th>
+                                    <th>Pages %</th>
+                                    <th>Total Usages</th>
+                                    <th>Support</th>
+                                    <th>Implemented</th>
+                                    <th>Open ?s</th>
+                                    <th>Risk</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════ DEV TRACKER TAB -->
+        <div id="tab-tracker" class="view">
+            <div class="callout">
+                <h3>🛠 For the dev team</h3>
+                <p>All variants that need action — filter by status to find your work queue. <strong>TODO</strong> =
+                    agreed to implement but not done. <strong>PARTIALLY</strong> = started but gaps remain.
+                    <strong>?</strong> = decision needed before dev can proceed.
+                </p>
+            </div>
+
+            <div class="card">
+                <div class="section-title">
+                    <div class="info-wrap">Implementation Tracker <span>all variants with open work</span><span
+                            class="info-icon">💡</span>
+                        <div class="info-tip"><strong>Filtered by default to open work</strong>Shows <code>TODO</code>,
+                            <code>PARTIALLY</code>, and <code>?</code> variants. Use the filter buttons to add/remove
+                            statuses. Search by element name. Page reach % is shown under each element name for priority
+                            context.</div>
+                    </div>
+                </div>
+                <div class="filters">
+                    <input class="search-box" id="devSearch" placeholder="Search element…" oninput="filterDev()" />
+                    <button class="filter-btn on f-todo" data-f="TODO" onclick="toggleDevFilter(this)">TODO</button>
+                    <button class="filter-btn on f-partial" data-f="PARTIALLY"
+                        onclick="toggleDevFilter(this)">PARTIALLY</button>
+                    <button class="filter-btn on f-unknown" data-f="?" onclick="toggleDevFilter(this)">?
+                        Unresolved</button>
+                    <button class="filter-btn f-yes" data-f="YES" onclick="toggleDevFilter(this)">YES (done)</button>
+                    <button class="filter-btn f-no" data-f="NO" onclick="toggleDevFilter(this)">NO</button>
+                    <button class="filter-btn f-wontdo" data-f="WON'T DO" onclick="toggleDevFilter(this)">WON'T
+                        DO</button>
+                </div>
+                <div class="tbl-wrap">
+                    <table id="devTable">
+                        <thead>
+                            <tr>
+                                <th>Element</th>
+                                <th>Variant</th>
+                                <th>New Editor Support</th>
+                                <th>Implemented</th>
+                                <th>Designer Block</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════ STAKEHOLDER TAB -->
+        <div id="tab-stakeholder" class="view">
+            <div class="callout">
+                <h3>📣 For stakeholder PMs — what YOUR team needs to deliver</h3>
+                <p>The table below shows elements where migration is blocked or incomplete. For each, the
+                    <strong>"Blocker type"</strong> column tells you what kind of decision or delivery is needed to
+                    unblock the migration team.
+                </p>
+                <ul>
+                    <li><strong>Product sign-off needed</strong> — a product decision is required before dev can proceed
+                    </li>
+                    <li><strong>Design spec needed</strong> — no mapping exists yet in the new editor</li>
+                    <li><strong>Open question</strong> — unclear ownership or approach, needs discussion</li>
+                    <li><strong>Won't migrate</strong> — intentional; confirm workaround is acceptable for your users
+                    </li>
+                </ul>
+            </div>
+
+            <div class="row2">
+                <div class="card red">
+                    <div class="section-title">
+                        <div class="info-wrap">High-Usage Blocked Elements <span>on &gt;10% of pages, not
+                                YES</span><span class="info-icon">💡</span>
+                            <div class="info-tip"><strong>What "blocked" means here</strong>Any element on &gt;10% of
+                                pages whose worst variant status is not fully <code>YES</code>. The blocker type tells
+                                you what action is needed from your team or stakeholders to unblock migration.</div>
+                        </div>
+                    </div>
+                    <div class="tbl-wrap">
+                        <table id="blockedTable">
+                            <thead>
+                                <tr>
+                                    <th>Element</th>
+                                    <th>Pages %</th>
+                                    <th>Status</th>
+                                    <th>Blocker type</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card gold">
+                    <div class="section-title">
+                        <div class="info-wrap">Decisions Still Needed <span>rows with "?" — need product
+                                sign-off</span><span class="info-icon">💡</span>
+                            <div class="info-tip"><strong>What "?" means</strong>The migration team hasn't decided
+                                whether/how to support this variant yet. These are open questions that need a product or
+                                design decision before dev work can start. Only elements with &gt;0.5% page reach are
+                                shown.</div>
+                        </div>
+                    </div>
+                    <div class="tbl-wrap">
+                        <table id="decisionsTable">
+                            <thead>
+                                <tr>
+                                    <th>Element</th>
+                                    <th>Variant</th>
+                                    <th>Pages %</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row1">
+                <div class="card">
+                    <div class="section-title">
+                        <div class="info-wrap">Won't Migrate — Confirm Workarounds <span>intentionally excluded;
+                                validate workaround is OK</span><span class="info-icon">💡</span>
+                            <div class="info-tip"><strong>"WON'T DO" = intentional decision</strong>These variants were
+                                explicitly decided not to migrate. A workaround is usually in place (e.g. use a heading
+                                block instead of a widget title). Stakeholder PMs should confirm the workaround is
+                                acceptable for their users before migration runs.</div>
+                        </div>
+                    </div>
+                    <div class="tbl-wrap">
+                        <table id="wontdoTable">
+                            <thead>
+                                <tr>
+                                    <th>Element</th>
+                                    <th>Variant</th>
+                                    <th>Pages %</th>
+                                    <th>Workaround / Comment</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════ RISK MATRIX TAB -->
+        <div id="tab-risk" class="view">
+            <div class="row1">
+                <div class="card">
+                    <div class="section-title">
+                        <div class="info-wrap">Risk Matrix <span>bubble size = total usages · X = page reach · Y = %
+                                unresolved · colour = worst status</span><span class="info-icon">💡</span>
+                            <div class="info-tip"><strong>How to read this chart</strong>Top-right = high reach + many
+                                open questions = highest risk. Bubble size = total number of usages across all pages.
+                                Colour = worst status of any variant: <code style="color:#ff6b6b">red</code> NO/WON'T DO
+                                · <code style="color:#f4a261">orange</code> ? · <code
+                                    style="color:#ffd166">yellow</code> TODO/PARTIAL · <code
+                                    style="color:#00d4aa">teal</code> all resolved.</div>
+                        </div>
+                    </div>
+                    <div class="legend">
+                        <div class="leg-item">
+                            <div class="leg-dot" style="background:var(--no)"></div>Has NO / WON'T DO variants
+                        </div>
+                        <div class="leg-item">
+                            <div class="leg-dot" style="background:var(--unknown)"></div>Has unresolved ? variants
+                        </div>
+                        <div class="leg-item">
+                            <div class="leg-dot" style="background:var(--partial)"></div>PARTIAL / TODO only
+                        </div>
+                        <div class="leg-item">
+                            <div class="leg-dot" style="background:var(--yes)"></div>Fully resolved
+                        </div>
+                    </div>
+                    <canvas id="riskScatter" height="200"></canvas>
+                </div>
+            </div>
+            <div class="row1">
+                <div class="card">
+                    <div class="section-title">
+                        <div class="info-wrap">Full Risk Table <span>sorted by risk score — high usage × unresolved
+                                gaps</span><span class="info-icon">💡</span>
+                            <div class="info-tip"><strong>Risk Score
+                                    formula</strong><code>Risk = (page reach %) × (unresolved / total variants)</code><br><br>Sorted
+                                highest to lowest. Elements with 0 unresolved variants always score 0 regardless of
+                                usage.</div>
+                        </div>
+                    </div>
+                    <div class="tbl-wrap">
+                        <table id="riskTable">
+                            <thead>
+                                <tr>
+                                    <th>Element</th>
+                                    <th>Pages %</th>
+                                    <th>Usages</th>
+                                    <th>Variants</th>
+                                    <th>Unresolved</th>
+                                    <th>Worst Status</th>
+                                    <th>Risk Score</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div><!-- /wrap -->
+
+    <script>
+        // ─── RAW DATA ────────────────────────────────────────────────────────────────
+        // Usage stats (from CSV 1): [name, pages, pct, usages, avgPerPage]
+        const usageData = [
+            ["p", 173292, 94.7, 3935610, 23], ["span", 163660, 89.49, 3986926, 25.9],
+            ["div", 161299, 88.15, 4303559, 29.4], ["Section", 152566, 83.39, 747003, 5.3],
+            ["a", 139921, 76.47, 1708376, 12.5], ["StaticContent", 124169, 68, 634305, 7.6],
+            ["strong", 116170, 63.51, 1503805, 12.8], ["li", 113207, 61.9, 1986638, 17.7],
+            ["img", 100124, 54.72, 478119, 5.3], ["ul", 98357, 53.76, 1937517, 19.7],
+            ["h1", 93840, 51.26, 267216, 2.9], ["td", 81646, 44.61, 210319, 2.6],
+            ["br", 75350, 41.18, 785956, 10.9], ["QuickLinks", 74235, 41, 166844, 4],
+            ["HeroImage", 72905, 40, 87838, 1.8], ["h3", 70837, 38.71, 350904, 5],
+            ["Accordion", 68853, 38, 206871, 3.1], ["UserProfile", 57054, 31.18, 291441, 5.3],
+            ["h2", 51589, 28.2, 180967, 3.5], ["Button", 48222, 26.35, 134216, 3.9],
+            ["tr", 45059, 24.63, 115571, 2.6], ["hr", 36775, 20.09, 125750, 3.4],
+            ["FileList", 34809, 19.02, 119749, 3.6], ["NewsFeed", 33162, 18.12, 63187, 3.1],
+            ["Infobox", 28200, 15.41, 43808, 1.6], ["em", 27338, 14.94, 130651, 4.8],
+            ["Portfolio", 26631, 15, 76674, 3.1], ["tbody", 21455, 11.72, 55911, 2.6],
+            ["th", 21455, 11.72, 55757, 2.6], ["table", 21253, 11.61, 55736, 2.6],
+            ["b", 20384, 11.14, 136007, 6.7], ["NewsStage", 18346, 10.03, 39613, 2.4],
+            ["Plugin", 17442, 10, 32289, 2], ["CreatePost", 17369, 9.49, 21218, 1.4],
+            ["VideoBlock", 14015, 7.66, 40758, 2.9], ["ol", 12297, 6.72, 25217, 2.4],
+            ["figure", 11350, 6.2, 300025, 26.4], ["small", 10308, 5.63, 43247, 4.2],
+            ["hashtag-block", 6502, 3.55, 43883, 6.7], ["group-subscription-block", 5354, 2.93, 14082, 2.6],
+            ["Navigation", 4617, 2.52, 7864, 2.6], ["i", 4471, 2.44, 20376, 4.6],
+            ["blockquote", 4329, 2.37, 9894, 2.3], ["embedded-block", 3337, 1.82, 5370, 1.6],
+            ["ms365-document-library", 3102, 1.7, 4190, 1.4], ["ms365-file-viewer", 1816, 0.99, 4195, 2.3],
+            ["ExternalScript", 1287, 0.7, 1487, 1.4], ["ms365-calendar", 1275, 0.7, 3364, 2.6],
+            ["pdf-embed", 590, 0.32, 600, 1], ["button-block", 485, 0.27, 1205, 2.5],
+            ["joyful-animation-block", 379, 0.21, 405, 1.1], ["static-content-block", 255, 0.14, 606, 2.4],
+            ["countdown-widget", 239, 0.13, 252, 1.1], ["ms365-files", 210, 0.11, 515, 2.5],
+            ["accordion-block", 124, 0.07, 202, 1.6], ["nested-page", 84, 0.05, 164, 2],
+            ["mention-block", 56, 0.03, 263, 4.7],
+        ];
+
+        // Migration data: [element, variant, newEditorSupport, implemented, designerBlock, comment]
+        // newEditorSupport: YES/NO/PARTIALLY/WON'T DO/?
+        // implemented: YES/NO/PARTIALLY/TODO/WON'T DO/IMPLICIT/""
+        const migData = [
+            ["a", "(base)", "YES", "YES", "Link", ""],
+            ["a", "anchor reference", "?", "", "Link", "do we support this?"],
+            ["a", "nested tags", "?", "", "Link", "e.g. nested tags which are not themselves styling"],
+            ["a", "image link", "?", "", "Link", "Slack thread"],
+            ["a", "complex content", "?", "", "Link", "do we support this? alternatively, we can split into multiple links"],
+            ["a", "style: color", "NO", "", "Link", ""],
+            ["a", "email link", "YES", "YES", "Link", "not handled separately in new editor"],
+            ["a", "phone link", "YES", "YES", "Link", "not handled separately in new editor"],
+            ["b", "(base)", "YES", "YES", "Text", "WISIWYG copy+paste artefact"],
+            ["b", "nested tags", "NO", "", "", "e.g. nested tags which are not themselves styling"],
+            ["br", "(base)", "WON'T DO", "PARTIALLY", "", "implemented as new paragraph; not supported in lists"],
+            ["button", "(base)", "NO", "TODO", "", "HTML element, not widget"],
+            ["div", "(base)", "NO", "YES", "", "ignored unless we can match it to something meaningful"],
+            ["em", "(base)", "YES", "YES", "Text", ""],
+            ["em", "nested tags", "NO", "", "", ""],
+            ["h1", "(base)", "YES", "YES", "Big Heading", ""],
+            ["h1", "nested tags", "NO", "", "Big Heading", ""],
+            ["h1", "style: background-color", "NO", "", "Big Heading", ""],
+            ["h1", "style: color", "WON'T DO", "TODO", "Big Heading", "won't be supported, revert to default color"],
+            ["h1", "style: text-align", "YES", "YES", "Big Heading", ""],
+            ["h1", "style: underline", "NO", "", "Big Heading", ""],
+            ["h2", "(base)", "YES", "YES", "Medium Heading", ""],
+            ["h2", "nested tags", "NO", "", "Medium Heading", ""],
+            ["h2", "style: background-color", "NO", "", "Medium Heading", ""],
+            ["h2", "style: color", "WON'T DO", "TODO", "Medium Heading", "won't be supported"],
+            ["h2", "style: text-align", "YES", "YES", "Medium Heading", ""],
+            ["h2", "style: underline", "NO", "", "Medium Heading", ""],
+            ["h3", "(base)", "YES", "YES", "Small Heading", ""],
+            ["h3", "nested tags", "NO", "", "Small Heading", ""],
+            ["h3", "style: background-color", "NO", "", "Small Heading", ""],
+            ["h3", "style: color", "WON'T DO", "TODO", "Small Heading", "won't be supported"],
+            ["h3", "style: text-align", "YES", "YES", "Small Heading", ""],
+            ["h3", "style: underline", "NO", "", "Small Heading", ""],
+            ["hr", "(base)", "YES", "YES", "Divider", ""],
+            ["i", "(base)", "YES", "YES", "Text", "WISIWYG copy+paste artefact"],
+            ["i", "nested tags", "?", "", "", ""],
+            ["iframe", "(base)", "?", "", "", ""],
+            ["img", "(base)", "YES", "YES", "", "default alignment mismatch"],
+            ["img", "alignment", "YES", "TODO", "", "complicated behavior in old editor"],
+            ["img", "alt text", "YES", "YES", "", ""],
+            ["img", "crop", "YES", "YES", "", ""],
+            ["img", "custom size", "YES", "YES", "", ""],
+            ["img", "tooltip", "NO", "WON'T DO", "", "workaround: ignore it"],
+            ["ol", "(base)", "YES", "YES", "Ordered List", ""],
+            ["ol", "li w/ style", "NO", "WON'T DO", "Ordered List", ""],
+            ["ol", "multiline items", "NO", "WON'T DO", "Ordered List", ""],
+            ["ol", "non-text li", "NO", "WON'T DO", "Ordered List", ""],
+            ["ol", "nested lists", "YES", "YES", "Ordered List", ""],
+            ["ol", "styled text li", "YES", "YES", "Ordered List", ""],
+            ["p", "(base)", "YES", "YES", "Paragraph", ""],
+            ["p", "style: text-align", "YES", "YES", "Paragraph", ""],
+            ["p", "style: relative position", "NO", "", "", "we ignore position when no further positioning directives"],
+            ["small", "(base)", "?", "", "", "possibly a WISIWYG copy+paste artefact"],
+            ["small", "nested tags", "?", "", "Text", ""],
+            ["span", "(base)", "WON'T DO", "TODO", "", "a span without relevant properties can be ignored"],
+            ["span", "nested tags", "?", "", "", "do we just ignore this?"],
+            ["span", "style: background-color", "NO", "", "", ""],
+            ["span", "style: color", "PARTIALLY", "", "", "Slack thread"],
+            ["span", "style: underline", "NO", "", "", "WISIWYG copy+paste artefact, no underline support"],
+            ["span", "strikethrough", "YES", "YES", "Text", "strikethrough text"],
+            ["strong", "(base)", "YES", "YES", "Text", ""],
+            ["strong", "nested tags", "?", "", "", ""],
+            ["svg", "(base)", "NO", "", "", "would have to store as image"],
+            ["table", "(base)", "YES", "TODO", "table/tablerow/tablecell", "includes tr, td etc"],
+            ["table", "table width/height", "?", "", "", ""],
+            ["table", "table alignment", "?", "", "", ""],
+            ["table", "table caption", "?", "", "", "Broken anyway"],
+            ["table", "table border width", "?", "", "", ""],
+            ["table", "column width/row height", "?", "", "", ""],
+            ["table", "cell spacing", "?", "", "", ""],
+            ["table", "cell padding", "?", "", "", ""],
+            ["table", "cell text alignment", "?", "TODO", "", ""],
+            ["table", "cell bg color", "?", "TODO", "", ""],
+            ["table", "cell border styling", "?", "TODO", "", ""],
+            ["table", "colspan", "WON'T DO", "", "", ""],
+            ["table", "rowspan", "WON'T DO", "", "", ""],
+            ["table", "headers", "NO", "", "", ""],
+            ["table", "footer", "NO", "", "", ""],
+            ["u", "(base)", "NO", "", "", "no underline support in new editor"],
+            ["u", "nested tags", "?", "", "", ""],
+            ["ul", "(base)", "YES", "YES", "Unordered List", ""],
+            ["ul", "li w/ style", "NO", "WON'T DO", "Unordered List", ""],
+            ["ul", "multiline items", "NO", "WON'T DO", "Unordered List", ""],
+            ["ul", "non-text li", "NO", "WON'T DO", "Unordered List", ""],
+            ["ul", "nested lists", "YES", "YES", "Unordered List", ""],
+            ["ul", "styled text li", "YES", "YES", "Unordered List", ""],
+            ["Accordion", "(base)", "YES", "YES", "Accordion", ""],
+            ["Accordion", "device visibility", "YES", "TODO", "Accordion", ""],
+            ["Accordion", "group visibility", "YES", "TODO", "Accordion", ""],
+            ["Accordion", "on-card", "?", "", "Accordion", ""],
+            ["Accordion", "title", "YES", "YES", "Accordion", "workaround: additional medium heading"],
+            ["Button", "(base)", "YES", "YES", "Button", "widget, not HTML element"],
+            ["Button", "background color", "NO", "", "Button", ""],
+            ["Button", "device visibility", "YES", "TODO", "Button", ""],
+            ["Button", "group visibility", "YES", "TODO", "Button", ""],
+            ["Button", "open mobile browser", "NO", "", "Button", ""],
+            ["Button", "text color", "NO", "", "Button", ""],
+            ["Button", "alignment", "YES", "YES", "Button", ""],
+            ["Button", "email", "YES", "YES", "Button", ""],
+            ["Button", "phone", "YES", "YES", "Button", ""],
+            ["Button", "title", "WON'T DO", "YES", "Button", "workaround: additional medium heading"],
+            ["CreatePost", "(base)", "", "", "", ""],
+            ["CreatePost", "device visibility", "YES", "TODO", "", ""],
+            ["CreatePost", "group visibility", "YES", "TODO", "", ""],
+            ["CreatePost", "on-card", "", "", "", ""],
+            ["FileList", "(base)", "", "", "", ""],
+            ["FileList", "device visibility", "YES", "TODO", "", ""],
+            ["FileList", "group visibility", "YES", "TODO", "", ""],
+            ["FileList", "on-card", "", "", "", ""],
+            ["HeroImage", "(base)", "WON'T DO", "PARTIALLY", "", "no crop/mobile zone support, implemented as Container with bg image"],
+            ["HeroImage", "device visibility", "YES", "TODO", "", ""],
+            ["HeroImage", "group visibility", "YES", "TODO", "", ""],
+            ["HeroImage", "on-card", "NO", "", "", ""],
+            ["Infobox", "(base)", "YES", "PARTIALLY", "Infobox", ""],
+            ["Infobox", "device visibility", "YES", "TODO", "Infobox", ""],
+            ["Infobox", "group visibility", "YES", "TODO", "Infobox", ""],
+            ["Infobox", "heading", "NO", "PARTIALLY", "Infobox", "can't add heading inside infobox, will be fixed"],
+            ["Infobox", "on-card", "NO", "", "Infobox", ""],
+            ["Infobox", "icon+color", "YES", "PARTIALLY", "Infobox", "icon+color combination mismatch, will be fixed"],
+            ["Infobox", "title", "WON'T DO", "YES", "Infobox", "workaround: additional medium heading"],
+            ["ms365-calendar", "(base)", "", "", "", ""],
+            ["ms365-calendar", "device visibility", "YES", "", "", ""],
+            ["ms365-calendar", "group visibility", "YES", "", "", ""],
+            ["ms365-document-library", "(base)", "", "", "", ""],
+            ["ms365-document-library", "device visibility", "YES", "", "", ""],
+            ["ms365-document-library", "group visibility", "YES", "", "", ""],
+            ["ms365-file-viewer", "(base)", "", "", "", ""],
+            ["ms365-file-viewer", "device visibility", "YES", "", "", ""],
+            ["ms365-file-viewer", "group visibility", "YES", "", "", ""],
+            ["ms365-files", "(base)", "", "", "", ""],
+            ["ms365-files", "device visibility", "YES", "", "", ""],
+            ["ms365-files", "group visibility", "YES", "", "", ""],
+            ["NewsFeed", "(base)", "YES", "PARTIALLY", "News feed/vertical", "Need to double check and finalize settings mapping"],
+            ["NewsFeed", "channel names", "YES", "TODO", "News", ""],
+            ["NewsFeed", "infinite scrolling", "WON'T DO", "TODO", "News", "missing, need product sign-off"],
+            ["NewsFeed", "limited posts", "YES", "TODO", "News", "old max 100, new max 31, need product sign-off"],
+            ["NewsFeed", "link source", "YES", "TODO", "News", "need product sign-off"],
+            ["NewsFeed", "device visibility", "YES", "TODO", "News", ""],
+            ["NewsFeed", "group visibility", "YES", "TODO", "News", ""],
+            ["NewsFeed", "layout", "?", "", "News", "some layouts complicated"],
+            ["NewsFeed", "skip posts", "YES", "TODO", "News", "need product sign-off"],
+            ["NewsFeed", "source", "YES", "TODO", "News", ""],
+            ["NewsFeed", "title", "WON'T DO", "TODO", "News", "workaround: additional medium heading"],
+            ["NewsStage", "(base)", "YES", "PARTIALLY", "News feed/horizontal", "can't use stage layout, only shows one post"],
+            ["NewsStage", "channel names", "YES", "TODO", "News", ""],
+            ["NewsStage", "interactions", "YES", "TODO", "News", ""],
+            ["NewsStage", "device visibility", "YES", "TODO", "News", ""],
+            ["NewsStage", "group visibility", "YES", "TODO", "News", ""],
+            ["NewsStage", "layout", "?", "", "News", "no matching styles in new block"],
+            ["NewsStage", "number of posts", "YES", "TODO", "News", "new editor max 4 for horizontal layout"],
+            ["NewsStage", "source", "YES", "TODO", "News", ""],
+            ["NewsStage", "teaser", "YES", "TODO", "News", "indicator for 'there's more text' is missing"],
+            ["NewsStage", "title", "WON'T DO", "TODO", "News", "workaround: additional medium heading"],
+            ["Plugin", "(base)", "YES", "YES", "Plugin", ""],
+            ["Plugin", "height", "YES", "YES", "Plugin", ""],
+            ["Plugin", "interaction toggle", "WON'T DO", "", "Plugin", "always interactive"],
+            ["Plugin", "device visibility", "YES", "TODO", "Plugin", ""],
+            ["Plugin", "group visibility", "YES", "TODO", "Plugin", ""],
+            ["Plugin", "scrolling toggle", "YES", "YES", "Plugin", ""],
+            ["Plugin", "title", "WON'T DO", "YES", "Plugin", "workaround: additional medium heading"],
+            ["Portfolio", "(base)", "?", "", "", ""],
+            ["Portfolio", "device visibility", "YES", "TODO", "", ""],
+            ["Portfolio", "group visibility", "YES", "TODO", "", ""],
+            ["Portfolio", "on-card", "?", "", "", ""],
+            ["Portfolio", "title", "YES", "", "", "workaround: additional medium heading"],
+            ["Portfolio", "item title", "?", "", "", ""],
+            ["Portfolio", "item description", "?", "", "", ""],
+            ["Portfolio", "item image crop", "?", "", "", ""],
+            ["Portfolio", "item image", "?", "", "", ""],
+            ["Portfolio", "item link", "?", "", "", ""],
+            ["QuickLinks", "(base)", "YES", "PARTIALLY", "QuickLinks", "workaround: Implemented as Unordered List; No icon mapping"],
+            ["QuickLinks", "device visibility", "YES", "TODO", "QuickLinks", ""],
+            ["QuickLinks", "group visibility", "YES", "TODO", "QuickLinks", ""],
+            ["QuickLinks", "on-card", "?", "", "QuickLinks", ""],
+            ["QuickLinks", "list style", "?", "", "QuickLinks", ""],
+            ["QuickLinks", "no link icon", "?", "", "QuickLinks", ""],
+            ["QuickLinks", "open mobile browser", "?", "", "QuickLinks", ""],
+            ["QuickLinks", "tiles style", "?", "", "QuickLinks", "how to arrange arbitrary number horizontally?"],
+            ["QuickLinks", "with link icon", "?", "TODO", "QuickLinks", "some link icons appear to have no 1:1 mapping"],
+            ["QuickLinks", "title", "WON'T DO", "", "QuickLinks", "workaround: additional medium heading"],
+            ["Section", "(base)", "YES", "YES", "Container", ""],
+            ["Section", "column split", "YES", "YES", "Container", ""],
+            ["Section", "device visibility", "YES", "TODO", "Container", ""],
+            ["Section", "group visibility", "YES", "TODO", "Container", ""],
+            ["Section", "nested sections", "?", "", "Container", ""],
+            ["Section", "on-card", "NO", "WON'T DO", "Container", "workaround: ignored, is this ok?"],
+            ["Section", "title", "WON'T DO", "YES", "Container", "workaround: additional medium heading"],
+            ["StaticContent", "(base)", "WON'T DO", "YES", "Container", ""],
+            ["StaticContent", "device visibility", "YES", "TODO", "Container", ""],
+            ["StaticContent", "group visibility", "YES", "TODO", "Container", ""],
+            ["StaticContent", "on-card", "NO", "WON'T DO", "Container", "workaround: ignored, is this ok?"],
+            ["StaticContent", "title", "WON'T DO", "YES", "Container", "workaround: additional medium heading"],
+            ["StaticContent", "background color", "PARTIALLY", "TODO", "Container", "only brand colors available"],
+            ["UserProfile", "(base)", "YES", "PARTIALLY", "UserProfile", "Different settings need to be checked"],
+            ["UserProfile", "device visibility", "YES", "TODO", "UserProfile", ""],
+            ["UserProfile", "group visibility", "YES", "TODO", "UserProfile", ""],
+            ["UserProfile", "on-card", "YES", "YES", "UserProfile", "defaults to card"],
+            ["UserProfile", "title", "NO", "YES", "UserProfile", "workaround: additional medium heading"],
+        ];
+
+        // ─── HELPERS ─────────────────────────────────────────────────────────────────
+        const usageMap = {};
+        usageData.forEach(d => { usageMap[d[0].toLowerCase()] = { pages: d[1], pct: d[2], usages: d[3], avg: d[4] }; });
+
+        function getUsage(name) {
+            return usageMap[name.toLowerCase()] || { pages: 0, pct: 0, usages: 0, avg: 0 };
+        }
+
+        function statusBadge(s) {
+            if (!s || s === '') return '<span class="badge s-na">—</span>';
+            const m = {
+                'YES': 's-yes', 'PARTIALLY': 's-partial', 'NO': 's-no',
+                "WON'T DO": 's-wontdo', 'TODO': 's-todo', '?': 's-unknown',
+                'IMPLICIT': 's-yes', 'WON\'T DO': 's-wontdo'
+            };
+            const k = Object.keys(m).find(k => s.toUpperCase().includes(k.toUpperCase())) || '';
+            return `<span class="badge ${m[k] || 's-na'}">${s}</span>`;
+        }
+
+        function worstStatus(variants) {
+            const order = ["?", "NO", "WON'T DO", "PARTIALLY", "TODO", "IMPLICIT", "YES", ""];
+            let worst = "YES";
+            variants.forEach(v => {
+                const sup = v[2], imp = v[3];
+                [sup, imp].forEach(s => {
+                    if (order.indexOf(s) < order.indexOf(worst)) worst = s;
+                });
+            });
+            return worst;
+        }
+
+        function worstColor(s) {
+            if (s === 'NO' || s === "WON'T DO") return '#ff6b6b';
+            if (s === '?') return '#f4a261';
+            if (s === 'PARTIALLY' || s === 'TODO') return '#ffd166';
+            return '#00d4aa';
+        }
+
+        function unresolvedCount(variants) {
+            return variants.filter(v => v[2] === '?' || v[3] === '?' || v[3] === 'TODO').length;
+        }
+
+        // Group migration data by element
+        const elementMap = {};
+        migData.forEach(row => {
+            const el = row[0];
+            if (!elementMap[el]) elementMap[el] = [];
+            elementMap[el].push(row);
+        });
+
+        // Build element summary
+        const elements = Object.keys(elementMap).map(name => {
+            const variants = elementMap[name];
+            const u = getUsage(name);
+            const unresolved = unresolvedCount(variants);
+            const worst = worstStatus(variants);
+            const riskScore = (u.pct / 100) * (unresolved / Math.max(variants.length, 1)) * 100;
+            return {
+                name, variants, ...u, unresolved, worst, riskScore,
+                totalVariants: variants.length
+            };
+        }).sort((a, b) => b.pct - a.pct);
+
+        // ─── KPI CARDS ───────────────────────────────────────────────────────────────
+        let totalYes = 0, totalPartialTodo = 0, totalBlocked = 0;
+        migData.forEach(r => {
+            const sup = r[2], imp = r[3];
+            if (sup === 'YES' && (imp === 'YES' || imp === 'IMPLICIT')) totalYes++;
+            else if (sup === 'PARTIALLY' || imp === 'PARTIALLY' || imp === 'TODO') totalPartialTodo++;
+            else if (sup === 'NO' || sup === "WON'T DO" || sup === '?' || imp === '?') totalBlocked++;
+        });
+        document.getElementById('kpi-yes').textContent = totalYes;
+        document.getElementById('kpi-partial').textContent = totalPartialTodo;
+        document.getElementById('kpi-blocked').textContent = totalBlocked;
+
+        // ─── DONUT CHART ─────────────────────────────────────────────────────────────
+        const statusCounts = { YES: 0, PARTIALLY: 0, TODO: 0, NO: 0, "WON'T DO": 0, "?": 0 };
+        migData.forEach(r => {
+            const s = r[2];
+            if (statusCounts[s] !== undefined) statusCounts[s]++;
+            else statusCounts["?"]++;
+        });
+        new Chart(document.getElementById('donutChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['YES', 'PARTIALLY', 'TODO', 'NO', "WON'T DO", "? Unresolved"],
+                datasets: [{
+                    data: [statusCounts.YES, statusCounts.PARTIALLY, statusCounts.TODO,
+                    statusCounts.NO, statusCounts["WON'T DO"], statusCounts["?"]],
+                    backgroundColor: ['rgba(0,212,170,.8)', 'rgba(255,209,102,.8)', 'rgba(108,99,255,.8)',
+                        'rgba(255,107,107,.8)', 'rgba(139,144,167,.6)', 'rgba(244,162,97,.8)'],
+                    borderColor: '#1a1d27', borderWidth: 3,
+                }]
+            },
+            options: {
+                responsive: true, cutout: '65%',
+                plugins: {
+                    legend: { position: 'right', labels: { color: '#8b90a7', font: { size: 11 }, padding: 12 } },
+                    tooltip: {
+                        backgroundColor: '#1a1d27', borderColor: '#2e3347', borderWidth: 1,
+                        titleColor: '#e8eaf0', bodyColor: '#8b90a7', padding: 10
+                    }
+                }
+            }
+        });
+
+        // ─── RISK BAR CHART ───────────────────────────────────────────────────────────
+        const topRisk = [...elements].sort((a, b) => b.riskScore - a.riskScore).slice(0, 12);
+        new Chart(document.getElementById('riskBar'), {
+            type: 'bar',
+            data: {
+                labels: topRisk.map(d => d.name),
+                datasets: [{
+                    label: 'Risk Score',
+                    data: topRisk.map(d => +d.riskScore.toFixed(1)),
+                    backgroundColor: topRisk.map(d => worstColor(d.worst) + 'bb'),
+                    borderColor: topRisk.map(d => worstColor(d.worst)),
+                    borderWidth: 1, borderRadius: 5, borderSkipped: false,
+                }]
+            },
+            options: {
+                indexAxis: 'y', responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1a1d27', borderColor: '#2e3347', borderWidth: 1,
+                        titleColor: '#e8eaf0', bodyColor: '#8b90a7', padding: 10,
+                        callbacks: { label: ctx => `Risk: ${ctx.raw} · ${topRisk[ctx.dataIndex].pct}% pages · ${topRisk[ctx.dataIndex].unresolved} unresolved` }
+                    }
+                },
+                scales: {
+                    x: { grid: { color: '#2e3347' }, ticks: { color: '#8b90a7' } },
+                    y: { grid: { display: false }, ticks: { color: '#e8eaf0', font: { size: 11 } } }
+                }
+            }
+        });
+
+        // ─── OVERVIEW TABLE ───────────────────────────────────────────────────────────
+        const ovTbody = document.querySelector('#overviewTable tbody');
+        elements.forEach(el => {
+            const maxUsage = 4303559;
+            const barW = Math.round((el.usages / maxUsage) * 100);
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+    <td class="el-name">${el.name}</td>
+    <td>${el.pct > 0 ? el.pct + '%' : '<1%'}</td>
+    <td>
+      <div style="margin-bottom:3px;font-size:0.78rem">${el.usages > 0 ? (el.usages / 1e6).toFixed(1) + 'M' : '—'}</div>
+      ${el.usages > 0 ? `<div class="rbar"><div class="rbar-fill" style="width:${barW}%;background:linear-gradient(90deg,var(--todo),var(--yes))"></div></div>` : ''}
+    </td>
+    <td>${statusBadge(el.worst)}</td>
+    <td>${statusBadge(el.variants.find(v => v[3]) ? el.variants.find(v => v[3])[3] : '')}</td>
+    <td style="color:${el.unresolved > 0 ? 'var(--unknown)' : 'var(--muted)'}">${el.unresolved > 0 ? el.unresolved + ' open' : '✓'}</td>
+    <td>
+      <div style="font-size:0.75rem;color:${el.riskScore > 5 ? 'var(--no)' : el.riskScore > 1 ? 'var(--partial)' : 'var(--muted)'}">
+        ${el.riskScore > 5 ? '🔴 High' : el.riskScore > 1 ? '🟡 Medium' : '🟢 Low'}
+      </div>
+    </td>`;
+            ovTbody.appendChild(tr);
+        });
+
+        // ─── DEV TABLE ───────────────────────────────────────────────────────────────
+        let devActiveFilters = new Set(['TODO', 'PARTIALLY', '?']);
+        const devTbody = document.querySelector('#devTable tbody');
+
+        function renderDevTable() {
+            const search = document.getElementById('devSearch').value.toLowerCase();
+            devTbody.innerHTML = '';
+            migData.forEach(row => {
+                const [el, variant, sup, imp, , comment] = row;
+                const matchFilter = devActiveFilters.has(sup) || devActiveFilters.has(imp) ||
+                    (devActiveFilters.has('?') && (sup === '?' || imp === '?'));
+                const matchSearch = !search || el.toLowerCase().includes(search) || variant.toLowerCase().includes(search);
+                if (!matchFilter || !matchSearch) return;
+                const u = getUsage(el);
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+      <td><span class="el-name">${el}</span>${u.pct > 0 ? `<br><span style="font-size:0.7rem;color:var(--muted)">${u.pct}% pages</span>` : ''}</td>
+      <td class="variant-name">${variant}</td>
+      <td>${statusBadge(sup)}</td>
+      <td>${statusBadge(imp || '')}</td>
+      <td style="color:var(--muted);font-size:0.78rem">${row[4] || '—'}</td>
+      <td style="color:var(--muted);font-size:0.75rem;max-width:220px">${comment || ''}</td>`;
+                devTbody.appendChild(tr);
+            });
+        }
+        renderDevTable();
+
+        function toggleDevFilter(btn) {
+            const f = btn.dataset.f;
+            if (devActiveFilters.has(f)) devActiveFilters.delete(f);
+            else devActiveFilters.add(f);
+            btn.classList.toggle('on');
+            renderDevTable();
+        }
+        function filterDev() { renderDevTable(); }
+
+        // ─── STAKEHOLDER TABLES ───────────────────────────────────────────────────────
+        // Blocked high-usage
+        const blockedTbody = document.querySelector('#blockedTable tbody');
+        elements.filter(el => el.pct >= 10 && el.worst !== 'YES').forEach(el => {
+            let blockerType = '';
+            if (el.worst === '?') blockerType = 'Open question — needs decision';
+            else if (el.worst === "WON'T DO") blockerType = "Won't migrate — confirm workaround";
+            else if (el.worst === 'NO') blockerType = 'Not supported — design spec needed';
+            else if (el.worst === 'PARTIALLY' || el.worst === 'TODO') blockerType = 'In progress — dev delivery needed';
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td class="el-name">${el.name}</td><td>${el.pct}%</td><td>${statusBadge(el.worst)}</td><td style="font-size:0.78rem;color:var(--muted)">${blockerType}</td>`;
+            blockedTbody.appendChild(tr);
+        });
+
+        // Decisions needed (? rows with usage)
+        const decTbody = document.querySelector('#decisionsTable tbody');
+        migData.filter(r => r[2] === '?').forEach(row => {
+            const u = getUsage(row[0]);
+            if (u.pct < 0.5) return; // skip tiny ones
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td class="el-name">${row[0]}</td><td class="variant-name">${row[1]}</td><td>${u.pct > 0 ? u.pct + '%' : '<1%'}</td><td style="font-size:0.75rem;color:var(--muted)">${row[5] || ''}</td>`;
+            decTbody.appendChild(tr);
+        });
+
+        // Won't do table
+        const wontTbody = document.querySelector('#wontdoTable tbody');
+        migData.filter(r => r[2] === "WON'T DO" || r[3] === "WON'T DO").forEach(row => {
+            const u = getUsage(row[0]);
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td class="el-name">${row[0]}</td><td class="variant-name">${row[1]}</td><td>${u.pct > 0 ? u.pct + '%' : '<1%'}</td><td style="font-size:0.75rem;color:var(--muted)">${row[5] || ''}</td>`;
+            wontTbody.appendChild(tr);
+        });
+
+        // ─── RISK SCATTER ─────────────────────────────────────────────────────────────
+        const scatterEls = elements.filter(e => e.pct > 0);
+        new Chart(document.getElementById('riskScatter'), {
+            type: 'bubble',
+            data: {
+                datasets: [{
+                    data: scatterEls.map(e => ({
+                        x: e.pct,
+                        y: Math.round((e.unresolved / Math.max(e.totalVariants, 1)) * 100),
+                        r: Math.max(4, Math.min(20, Math.sqrt(e.usages) / 120)),
+                        name: e.name, pct: e.pct, unresolved: e.unresolved, total: e.totalVariants
+                    })),
+                    backgroundColor: scatterEls.map(e => worstColor(e.worst) + '99'),
+                    borderColor: scatterEls.map(e => worstColor(e.worst)),
+                    borderWidth: 1,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1a1d27', borderColor: '#2e3347', borderWidth: 1,
+                        titleColor: '#e8eaf0', bodyColor: '#8b90a7', padding: 10,
+                        callbacks: { label: ctx => { const d = ctx.raw; return [`  ${d.name}`, `  ${d.pct}% of pages`, `  ${d.unresolved}/${d.total} variants unresolved`]; } }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Page reach (%)', color: '#8b90a7', font: { size: 11 } },
+                        grid: { color: '#2e3347' }, ticks: { color: '#8b90a7', callback: v => v + '%' }
+                    },
+                    y: {
+                        title: { display: true, text: '% variants unresolved', color: '#8b90a7', font: { size: 11 } },
+                        grid: { color: '#2e3347' }, ticks: { color: '#8b90a7', callback: v => v + '%' }
+                    }
+                }
+            }
+        });
+
+        // ─── RISK TABLE ───────────────────────────────────────────────────────────────
+        const riskTbody = document.querySelector('#riskTable tbody');
+        [...elements].sort((a, b) => b.riskScore - a.riskScore).forEach(el => {
+            const tr = document.createElement('tr');
+            const riskLabel = el.riskScore > 5 ? '🔴 High' : el.riskScore > 1 ? '🟡 Medium' : '🟢 Low';
+            tr.innerHTML = `
+    <td class="el-name">${el.name}</td>
+    <td>${el.pct > 0 ? el.pct + '%' : '<1%'}</td>
+    <td>${el.usages > 0 ? (el.usages / 1e6).toFixed(1) + 'M' : '—'}</td>
+    <td style="color:var(--muted)">${el.totalVariants}</td>
+    <td style="color:${el.unresolved > 0 ? 'var(--unknown)' : 'var(--muted)'}">${el.unresolved}</td>
+    <td>${statusBadge(el.worst)}</td>
+    <td style="font-size:0.8rem">${riskLabel}</td>`;
+            riskTbody.appendChild(tr);
+        });
+
+        // ─── TAB SWITCHING ────────────────────────────────────────────────────────────
+        function switchTab(name) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('tab-' + name).classList.add('active');
+        }
+    </script>
+</body>
+
+</html>
